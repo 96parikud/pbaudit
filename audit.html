@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login & Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- jsPDF & autoTable CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5b6c6 0%, #f7cac9 50%, #a1c4fd 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 32px 24px 24px 24px;
+      background: linear-gradient(135deg, #fff 90%, #f8e1f4 100%);
+      border-radius: 18px;
+      box-shadow: 0 8px 28px rgba(80,30,120,0.11), 0 1.5px 4px rgba(90,25,80,0.09);
+      border: 1px solid #f0cfff;
+      position: relative;
+      overflow: hidden;
+    }
+    .container::before {
+      content: '';
+      position: absolute;
+      top: -70px;
+      right: -70px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, #fcb7b7 60%, transparent 100%);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.19;
+    }
+    .hidden { display: none; }
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      border-radius: 8px;
+      border: 1.5px solid #e3e3e3;
+      font-size: 16px;
+      background: #fafaff;
+      transition: border 0.2s;
+    }
+    input:focus {
+      border: 1.5px solid #e62263;
+      outline: none;
+      background: #f9f1ff;
+    }
+    button {
+      background: linear-gradient(90deg, #e62263 0%, #f672a7 100%);
+      color: white;
+      padding: 14px 22px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 5px 0;
+      font-size: 17px;
+      font-weight: 600;
+      width: 100%;
+      box-shadow: 0 2px 8px rgba(230,34,99,0.09);
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    button:hover, .logout-btn:hover {
+      background: linear-gradient(90deg, #d0144d 0%, #e66292 100%);
+      box-shadow: 0 6px 24px rgba(230,34,99,0.13);
+    }
+    .top-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+    .top-bar h2 {
+      margin: 0 0 2px 0;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: #421647;
+      z-index: 1;
+    }
+    .top-bar-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+      z-index: 1;
+    }
+    .top-bar-buttons button {
+      flex: 1;
+      min-width: 120px;
+    }
+    .logout-btn {
+      background: linear-gradient(90deg, #555 0%, #777 100%);
+      color: #f2f2f2;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .logout-btn:active {
+      background: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(230,34,99,0.04);
+    }
+    th, td {
+      padding: 12px 10px;
+      border: 1px solid #f3e6f3;
+      font-size: 15px;
+      text-align: left;
+      background: none;
+      vertical-align: middle;
+    }
+    th {
+      background: linear-gradient(90deg, #e62263 0%, #f672a7 100%);
+      color: white;
+      font-weight: 600;
+      border: none;
+      letter-spacing: 0.5px;
+    }
+    td {
+      background: rgba(255,255,255,0.92);
+      color: #33223b;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 12px;
+      box-shadow: 0 0.5px 3px rgba(230,34,99,0.06);
+      background: rgba(255,255,255,0.6);
+      margin-top: 10px;
+    }
+    #error {
+      color: #e62263;
+      margin-top: 10px;
+      font-weight: 500;
+      background: #fff4f6;
+      border-radius: 6px;
+      padding: 8px 10px;
+      box-shadow: 0 1px 2px rgba(230,34,99,0.07);
+      border: 1px solid #fad0df;
+    }
+    .report-btn {
+      padding: 7px 16px;
+      background: linear-gradient(90deg,#37b2fd 0%,#6e70fd 100%);
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .report-btn:hover {
+      background: linear-gradient(90deg,#249eea 0%,#4d53e1 100%);
+    }
+    .gdrive-thumb {
+      max-width: 80px;
+      max-height: 80px;
+      border-radius: 8px;
+      border: 1px solid #eee;
+      display: block;
+      margin: 0 auto;
+      object-fit: cover;
+    }
+    @media (min-width: 600px) {
+      .top-bar {
+        flex-direction: row;
+        align-items: center;
+      }
+      .top-bar-buttons {
+        justify-content: flex-end;
+        width: auto;
+      }
+      button {
+        width: auto;
+      }
+      .container {
+        padding: 38px 38px 32px 38px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Login Section -->
+  <div id="loginSection">
+    <h2>Admin Login</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <div id="error"></div>
+  </div>
+
+  <!-- Dashboard Section -->
+  <div id="dashboardSection" class="hidden">
+    <div class="top-bar">
+      <h2>Audit Data</h2>
+      <div class="top-bar-buttons">
+        <button onclick="downloadCSV()">Download CSV</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Example header map: "Full Header" : "Short"
+  const headerMap = {
+    "Full Name": "Name",
+    "Email Address": "Email",
+    "Contact Number": "Phone",
+    "Google Drive Photo": "Photo",
+    "Application Date": "Date",
+    // Add more mappings as needed
+  };
+
+  let globalData = [];
+
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-VAQWxWcJ-ZiSWXnnF99flZ5Jp6N_w5DWpYPJu45ydCml53OjWhyzlulk0dd_Xfz8/exec";
+
+  const validUsers = {
+    "admin": "parikud",
+    "ansuman": "paris@2025",
+    "sameer": "sameer@1996"
+  };
+
+  function login() {
+    const user = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value.trim();
+
+    if (validUsers[user] && validUsers[user] === pass) {
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("dashboardSection").classList.remove("hidden");
+      document.getElementById("error").textContent = "";
+      fetchData();
+    } else {
+      document.getElementById("error").textContent = "Invalid username or password.";
+    }
+  }
+
+  function logout() {
+    document.getElementById("username").value = "";
+    document.getElementById("password").value = "";
+    document.getElementById("loginSection").classList.remove("hidden");
+    document.getElementById("dashboardSection").classList.add("hidden");
+    document.getElementById("tableHead").innerHTML = "";
+    document.getElementById("tableBody").innerHTML = "";
+  }
+
+  function fetchData() {
+    fetch(SCRIPT_URL)
+      .then(res => res.json())
+      .then(data => {
+        if (!Array.isArray(data) || data.length === 0) return;
+
+        globalData = data;
+
+        const headers = Object.keys(data[0]);
+        const shortHeaders = headers.map(h => headerMap[h] || h);
+
+        // Short headers in table view
+        const headRow = document.getElementById("tableHead");
+        const body = document.getElementById("tableBody");
+        headRow.innerHTML = "<tr>" + shortHeaders.map(h => `<th>${h}</th>`).join('') + "<th>Action</th></tr>";
+        body.innerHTML = data.map((row, idx) => {
+          let cells = headers.map(h => {
+            const val = row[h];
+            if (typeof val === "string" && val.match(/^https:\/\/drive\.google\.com\/[^\s]+$/)) {
+              let fileIdMatch = val.match(/\/d\/([^\/]+)\//);
+              let fileId = fileIdMatch ? fileIdMatch[1] : null;
+              let imgSrc = fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : val;
+              return `<td><img src="${imgSrc}" alt="Google Drive Image" class="gdrive-thumb" /></td>`;
+            } else {
+              return `<td>${val}</td>`;
+            }
+          }).join('');
+          cells += `<td><button class="report-btn" onclick="downloadRowPDF(${idx})">Download Report</button></td>`;
+          return "<tr>" + cells + "</tr>";
+        }).join('');
+      })
+      .catch(error => {
+        alert("Error loading data: " + error);
+      });
+  }
+
+  function downloadCSV() {
+    if (!globalData || globalData.length === 0) return;
+
+    // Use header mapping to create short headers
+    const headers = Object.keys(globalData[0]);
+    const shortHeaders = headers.map(h => headerMap[h] || h);
+    const csvRows = [];
+
+    // Add header row
+    csvRows.push(shortHeaders.join(","));
+
+    // Add data rows
+    globalData.forEach(row => {
+      const rowData = headers.map(h => {
+        let val = row[h];
+        // If it's an image, output the image URL
+        if (typeof val === "string" && val.match(/^https:\/\/drive\.google\.com\/[^\s]+$/)) {
+          let fileIdMatch = val.match(/\/d\/([^\/]+)\//);
+          let fileId = fileIdMatch ? fileIdMatch[1] : null;
+          let imgSrc = fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : val;
+          return `"${imgSrc}"`;
+        }
+        // Escape quotes
+        return `"${String(val).replace(/"/g, '""')}"`;
+      });
+      csvRows.push(rowData.join(","));
+    });
+
+    // Download
+    const csv = csvRows.join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "franchise-data.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function toDataURL(url) {
+    return fetch(url, {mode: "cors"})
+      .then(response => {
+        if (!response.ok) throw new Error("Image fetch failed");
+        return response.blob();
+      })
+      .then(blob => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = e => reject(e);
+        reader.readAsDataURL(blob);
+      }));
+  }
+
+  async function downloadRowPDF(idx) {
+    const row = globalData[idx];
+    const headers = Object.keys(row);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Draw card background
+    doc.setFillColor(240, 240, 250);
+    doc.roundedRect(8, 16, 194, 140, 8, 8, 'F');
+
+    // Title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(60, 40, 110);
+    doc.text('Audit Report', 18, 28);
+
+    // Prepare table data with short headers
+    let tableData = [];
+    let hasImage = false;
+    let imageUrl = '';
+    let imageField = '';
+    for (let h of headers) {
+      let val = row[h];
+      let shortHeader = headerMap[h] || h;
+      if (typeof val === "string" && val.match(/^https:\/\/drive\.google\.com\/[^\s]+$/)) {
+        let fileIdMatch = val.match(/\/d\/([^\/]+)\//);
+        let fileId = fileIdMatch ? fileIdMatch[1] : null;
+        let imgSrc = fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : val;
+        tableData.push([
+          {content: shortHeader, styles: {fontStyle: 'bold'}},
+          {content: "See image below", styles: {fontStyle: 'italic'}}
+        ]);
+        hasImage = true;
+        imageUrl = imgSrc;
+        imageField = shortHeader;
+      } else {
+        // Support for line breaks in value (if data entered as foo\nbar or foo\\nbar)
+        if (val && typeof val === "string") {
+          val = val.replace(/\\n/g, '\n');
+        }
+        tableData.push([
+          {content: shortHeader, styles: {fontStyle: 'bold'}},
+          {content: val}
+        ]);
+      }
+    }
+
+    doc.autoTable({
+      head: [['Field', 'Value']],
+      body: tableData,
+      startY: 38,
+      theme: 'plain',
+      headStyles: {
+        fillColor: [70, 60, 130],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 12,
+        halign: 'center',
+        cellPadding: 5,
+        lineWidth: 0
+      },
+      bodyStyles: {
+        textColor: [40, 28, 60],
+        fontSize: 11,
+        cellPadding: 5,
+        lineWidth: 0,
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 255]
+      },
+      styles: {
+        minCellHeight: 10,
+        cellPadding: {top: 5, right: 5, bottom: 5, left: 5},
+        font: 'helvetica',
+        lineWidth: 0.6,
+        overflow: 'linebreak', // ensures line breaks are respected
+        valign: 'middle',
+        halign: 'left',
+        fillColor: [255, 255, 255],
+        borderColor: [220, 220, 255]
+      },
+      tableLineWidth: 0,
+      margin: {left: 14, right: 14}
+    });
+
+    doc.setDrawColor(190, 170, 240);
+    doc.setLineWidth(1.2);
+    doc.roundedRect(8, 16, 194, doc.lastAutoTable.finalY - 16 + (hasImage ? 60 : 16), 8, 8, 'S');
+
+    if (hasImage && imageUrl) {
+      try {
+        const imgData = await toDataURL(imageUrl);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Image for: ${imageField}`, 18, doc.lastAutoTable.finalY + 16);
+        doc.addImage(imgData, 'JPEG', 18, doc.lastAutoTable.finalY + 20, 52, 52, undefined, 'FAST');
+      } catch (err) {
+        doc.setFontSize(11);
+        doc.setTextColor(200, 40, 40);
+        doc.text('Could not load image. Here is the link:', 18, doc.lastAutoTable.finalY + 16);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(28, 28, 100);
+        doc.text(imageUrl, 18, doc.lastAutoTable.finalY + 22);
+      }
+    }
+
+    let id = row[headers[0]] ? row[headers[0]].toString().replace(/[^\w\d-]/g, '') : idx;
+    doc.save(`Audit-Report-${id}.pdf`);
+  }
+  window.downloadRowPDF = downloadRowPDF;
+</script>
+
+</body>
+</html>
